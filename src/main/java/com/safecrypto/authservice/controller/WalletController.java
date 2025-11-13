@@ -5,42 +5,39 @@ import com.safecrypto.authservice.repository.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/wallet")
 @CrossOrigin(origins = "http://localhost:3000")
 public class WalletController {
+
     @Autowired
     private WalletRepository walletRepo;
 
     @GetMapping("/{email}")
-    public ResponseEntity<?> getWallet(@PathVariable String email) {
-        Wallet wallet = walletRepo.findByEmail(email);
-        if (wallet == null) {
-            wallet = new Wallet();
-            wallet.setEmail(email);
-            wallet.setBalanceUsd(10000.0);
-            walletRepo.save(wallet);
-        }
+    public ResponseEntity<Wallet> getWallet(@PathVariable String email) {
+        Optional<Wallet> walletOpt = walletRepo.findByEmail(email);
+        Wallet wallet = walletOpt.orElseGet(() -> {
+            Wallet w = new Wallet();
+            w.setEmail(email);
+            w.setBalanceUsd(0.0);
+            return walletRepo.save(w);
+        });
         return ResponseEntity.ok(wallet);
     }
 
     @PostMapping("/update")
-    public ResponseEntity<String> updateWallet(@RequestBody Wallet walletRequest) {
-        try {
-            Wallet wallet = walletRepo.findByEmail(walletRequest.getEmail());
-            if (wallet == null) {
-                wallet = new Wallet();
-                wallet.setEmail(walletRequest.getEmail());
-                wallet.setBalanceUsd(walletRequest.getBalanceUsd());
-            } else {
-                wallet.setBalanceUsd(walletRequest.getBalanceUsd());
-            }
-            walletRepo.save(wallet);
-            return ResponseEntity.ok("Wallet updated successfully");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body("Wallet update failed: " + e.getMessage());
-        }
+    public ResponseEntity<Wallet> updateWallet(@RequestBody Wallet walletUpdate) {
+        Wallet wallet = walletRepo.findByEmail(walletUpdate.getEmail())
+                .orElseGet(() -> {
+                    Wallet w = new Wallet();
+                    w.setEmail(walletUpdate.getEmail());
+                    w.setBalanceUsd(0.0);
+                    return w;
+                });
+        wallet.setBalanceUsd(walletUpdate.getBalanceUsd());
+        Wallet saved = walletRepo.save(wallet);
+        return ResponseEntity.ok(saved);
     }
 }

@@ -11,18 +11,20 @@ import java.util.List;
 @RequestMapping("/api/trades")
 @CrossOrigin(origins = "http://localhost:3000")
 public class TradeController {
+
     @Autowired
     private TradeRepository tradeRepo;
 
     @PostMapping
     public ResponseEntity<Trade> createTrade(@RequestBody Trade trade) {
+        trade.setEmail(trade.getEmail().trim().toLowerCase());
         Trade saved = tradeRepo.save(trade);
         return ResponseEntity.ok(saved);
     }
 
     @GetMapping("/{email}")
     public ResponseEntity<List<Trade>> getTradesByEmail(@PathVariable String email) {
-        List<Trade> trades = tradeRepo.findByEmail(email);
+        List<Trade> trades = tradeRepo.findByEmail(email.trim().toLowerCase());
         return ResponseEntity.ok(trades);
     }
 }
